@@ -1,71 +1,82 @@
 use anyhow::{anyhow, Result};
 use nom::{
-    bytes::complete::{tag, take, take_till1},
-    character::complete::{digit1, multispace0},
-    combinator::{map_res, opt},
+    branch::alt,
+    bytes::complete::{tag, take_till},
+    character::complete::{multispace0, u32 as parse_u32},
+    combinator::{eof, not, opt},
     multi::many1,
-    sequence::terminated,
     IResult,
 };
 
-fn parse_valve_name(input: &str) -> IResult<&str, &str> {
-    let (input, _) = tag("Valve ")(input)?;
-    let (input, name) = take(2usize)(input)?;
-    Ok((input, name))
+pub fn parse_game(input: &'static str) -> Result<Game> {
+    let (_, game) = parse_game_line(input).map_err(|e| anyhow!(e))?;
+    Ok(game)
 }
 
-fn parse_valve_rate(input: &str) -> IResult<&str, u32> {
-    let (input, _) = tag(" has flow rate=")(input)?;
-    let (input, rate) = map_res(digit1, |s: &str| s.parse::<u32>())(input)?;
-    Ok((input, rate))
+fn parse_game_line(input: &'static str) -> IResult<&str, Game> {
+    let (input, _) = tag("Game ")(input)?;
+    let (input, id) = parse_u32(input)?;
+    let (input, hints) = many1(parse_hints)(input)?;
+    Ok((
+        input,
+        Game {
+            id: id as usize,
+            hint: hints,
+        },
+    ))
 }
 
-fn parse_valve_connection(input: &str) -> IResult<&str, &str> {
+fn parse_hint(input: &'static str) -> IResult<&str, Hint> {
+    let (input, _) = take_till(|c: char| c.is_numeric())(input)?;
+    let (input, count) = parse_u32(input)?;
     let (input, _) = multispace0(input)?;
-    let (input, name) = terminated(take(2usize), opt(tag(",")))(input)?;
-    Ok((input, name))
+    let (input, color) = alt((tag("blue"), tag("green"), tag("red")))(input)?;
+    Ok((
+        input,
+        Hint {
+            color,
+            count: count as usize,
+        },
+    ))
 }
 
-fn valve_parser(input: &'static str) -> IResult<&str, Valve> {
-    let (input, name) = parse_valve_name(input)?;
-    let (input, rate) = parse_valve_rate(input)?;
-    let (input, _) = take_till1(|c: char| c.is_uppercase())(input)?;
-    let (input, connections) = many1(parse_valve_connection)(input)?;
-    let valve = Valve {
-        name,
-        rate,
-        connections,
-        is_open: false,
-    };
-    Ok((input, valve))
-}
-
-pub fn parse_valve(input: &'static str) -> Result<Valve> {
-    let (_, valve) = valve_parser(input)?;
-    Ok(valve)
-}
-
-#[cfg_attr(test, derive(PartialEq, Eq))]
-#[derive(Debug)]
-pub struct Valve {
-    name: &'static str,
-    pub rate: u32,
-    connections: Vec<&'static str>,
-    is_open: bool,
-}
-
-impl Valve {
-    pub fn get_connections<'a>(&self, valves: &'a [Valve]) -> Result<Vec<&'a Valve>> {
-        let mut connections = Vec::new();
-        for name in self.connections.iter() {
-            let valve = valves
-                .iter()
-                .find(|v| v.name == *name)
-                .ok_or(anyhow!("Valve {} not found", name))?;
-            connections.push(valve);
+fn parse_hints(input: &'static str) -> IResult<&str, Vec<Hint>> {
+    let (input, _) = not(eof)(input)?;
+    let mut input = input;
+    let mut hints = Vec::new();
+    while !input.is_empty() {
+        let (loop_input, hint) = parse_hint(input)?;
+        hints.push(hint);
+        let (loop_input, end) = opt(tag(";"))(loop_input)?;
+        input = loop_input;
+        if end.is_some() {
+            break;
         }
-        Ok(connections)
     }
+    Ok((input, hints))
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Hint {
+    pub color: &'static str,
+    pub count: usize,
+}
+
+impl Hint {
+    pub fn is_valid(&self) -> bool {
+        match self.color {
+            "blue" => self.count <= 14,
+            "green" => self.count <= 13,
+            "red" => self.count <= 12,
+            _ => false,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Game {
+    pub id: usize,
+    pub hint: Vec<Vec<Hint>>,
 }
 
 #[cfg(test)]
@@ -73,15 +84,89 @@ mod tests {
     use super::*;
 
     #[test]
-    fn could_parse_valve() {
-        let input = "Valve BB has flow rate=13; tunnels lead to valves CC, AA";
-        let valve = parse_valve(input).unwrap();
-        let expected = Valve {
-            name: "BB",
-            rate: 13,
-            connections: vec!["CC", "AA"],
-            is_open: false,
+    fn could_parse_hint() {
+        let input = ":1 blue,";
+        let hint = parse_hint(input).unwrap();
+        let expected = Hint {
+            color: "blue",
+            count: 1,
+        };
+        assert_eq!(hint.1, expected);
+    }
+
+    #[test]
+    fn could_parse_hints() {
+        let input = ":1 blue, 2 green; 3 green";
+        let hint = parse_hints(input).unwrap();
+        let expected = vec![
+            Hint {
+                color: "blue",
+                count: 1,
+            },
+            Hint {
+                color: "green",
+                count: 2,
+            },
+        ];
+        assert_eq!(hint.1, expected);
+    }
+
+    #[test]
+    fn could_parse_game() {
+        let input = "Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue";
+        let valve = parse_game(input).unwrap();
+        let expected = Game {
+            id: 2,
+            hint: vec![
+                vec![
+                    Hint {
+                        color: "blue",
+                        count: 1,
+                    },
+                    Hint {
+                        color: "green",
+                        count: 2,
+                    },
+                ],
+                vec![
+                    Hint {
+                        color: "green",
+                        count: 3,
+                    },
+                    Hint {
+                        color: "blue",
+                        count: 4,
+                    },
+                    Hint {
+                        color: "red",
+                        count: 1,
+                    },
+                ],
+                vec![
+                    Hint {
+                        color: "green",
+                        count: 1,
+                    },
+                    Hint {
+                        color: "blue",
+                        count: 1,
+                    },
+                ],
+            ],
         };
         assert_eq!(valve, expected);
+    }
+
+    #[test]
+    fn tmp() {
+        use nom::bytes::complete::tag;
+        use nom::multi::many1;
+
+        fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+            many1(tag("abc"))(s)
+        }
+
+        assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+        assert_eq!(parser("abc"), Ok(("", vec!["abc"])));
     }
 }
