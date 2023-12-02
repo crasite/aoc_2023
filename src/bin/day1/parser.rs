@@ -2,7 +2,7 @@ use nom::{
     branch::alt,
     bytes::complete::{tag, take},
     character::complete::alpha0,
-    combinator::{map, map_res, opt},
+    combinator::{map, map_res},
     IResult,
 };
 
@@ -47,27 +47,32 @@ pub fn parse_text_number(input: &str) -> IResult<&str, u32> {
 }
 
 pub fn parse2(input: &str) -> IResult<&str, u32> {
-    let mut remaining = input;
-    let mut parse_result = alt((parse_text_number, map_res(take(1usize), parse_number)))(remaining);
-    while let Err(_) = parse_result {
-        (remaining, _) = take(1usize)(remaining)?;
-        parse_result = alt((parse_text_number, map_res(take(1usize), parse_number)))(remaining);
-    }
-    let (_, initial) = parse_result?;
-    let (mut remaining, _) = opt(take(1usize))(remaining)?; 
+    let (initial, mut remaining) = first_number(input)?;
     let mut last = None;
-    while remaining.len() > 0 {
+    while !remaining.is_empty() {
         let tmp_result = alt((parse_text_number, map_res(take(1usize), parse_number)))(remaining);
         if let Ok((_, v)) = tmp_result {
             last = Some(v);
         }
-        (remaining, _) = opt(take(1usize))(remaining)?;
+        (remaining, _) = take(1usize)(remaining)?;
     }
     if let Some(last) = last {
         Ok((remaining, initial * 10 + last))
     } else {
         Ok((remaining, initial * 10 + initial))
     }
+}
+
+fn first_number(remaining: &str) -> Result<(u32, &str), nom::Err<nom::error::Error<&str>>> {
+    let mut remaining = remaining;
+    let mut parse_result = alt((parse_text_number, map_res(take(1usize), parse_number)))(remaining);
+    while parse_result.is_err() {
+        (remaining, _) = take(1usize)(remaining)?;
+        parse_result = alt((parse_text_number, map_res(take(1usize), parse_number)))(remaining);
+    }
+    let (_, initial) = parse_result?;
+    let (remaining, _) = take(1usize)(remaining)?;
+    Ok((initial, remaining))
 }
 
 #[cfg(test)]
@@ -88,15 +93,6 @@ mod tests {
 
     #[test]
     fn parser_2_test() {
-        /*
-        two1nine
-        eightwothree
-        abcone2threexyz
-        xtwone3four
-        4nineeightseven2
-        zoneight234
-        7pqrstsixteen
-        */
         let input = "two1nine";
         assert_eq!(parse2(input).unwrap().1, 29);
         let input = "eightwothree";
