@@ -19,6 +19,30 @@ pub struct Symbol {
     y: u32,
 }
 
+impl Symbol {
+    fn get_gear_ratio(&self, numbers: &[Number]) -> usize {
+        let mut gears = vec![];
+        'a: for number in numbers {
+            for y in number.y.saturating_sub(1)..=number.y + 1 {
+                if self.y != y {
+                    continue;
+                }
+                for x in number.x.saturating_sub(1)..=number.x + number.width + 1 {
+                    if self.x == x {
+                        gears.push(number);
+                        continue 'a;
+                    }
+                }
+            }
+        }
+        if gears.len() == 2 {
+            gears[0].value as usize * gears[1].value as usize
+        } else {
+            0
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct Number {
     pub value: u32,
@@ -157,5 +181,41 @@ mod tests {
             y: 0,
         };
         assert!(number.is_part(&symbol));
+    }
+
+    #[test]
+    fn could_get_gear_ratio() {
+        let symbol = Symbol {
+            name: "*",
+            x: 4,
+            y: 0,
+        };
+        let numbers = vec![Number {
+            value: 617,
+            width: 3,
+            x: 1,
+            y: 0,
+        }];
+        assert_eq!(symbol.get_gear_ratio(&numbers), 0);
+        let symbol = Symbol {
+            name: "*",
+            x: 4,
+            y: 0,
+        };
+        let numbers = vec![
+            Number {
+                value: 467,
+                width: 3,
+                x: 1,
+                y: 0,
+            },
+            Number {
+                value: 35,
+                width: 3,
+                x: 1,
+                y: 1,
+            },
+        ];
+        assert_eq!(symbol.get_gear_ratio(&numbers), 16345);
     }
 }
