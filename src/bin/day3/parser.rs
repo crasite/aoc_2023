@@ -100,7 +100,8 @@ pub fn parse_line(input: &'static str, y: u32) -> IResult<&str, (Vec<Symbol>, Ve
     let (mut input, width) = take_while(|c: char| c == '.')(input)?;
     x += width.len() as u32;
     while opt(eof)(input)?.1.is_none() {
-        let (new_input, token) = parse_token(input)?;
+        let token;
+        (input, token) = parse_token(input)?;
         match token {
             Token::Symbol(name) => {
                 symbols.push(Symbol { name, x, y });
@@ -117,9 +118,9 @@ pub fn parse_line(input: &'static str, y: u32) -> IResult<&str, (Vec<Symbol>, Ve
                 x += width;
             }
         }
-        let (new_input, width) = take_while(|c: char| c == '.')(new_input)?;
+        let width;
+        (input, width) = take_while(|c: char| c == '.')(input)?;
         x += width.len() as u32;
-        input = new_input;
     }
     Ok((input, (symbols, numbers)))
 }
