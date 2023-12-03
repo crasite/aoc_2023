@@ -2,8 +2,8 @@ use nom::{
     branch::alt,
     bytes::complete::{take, take_while, take_while1},
     character::complete::one_of,
-    combinator::{eof, not, opt},
-    IResult
+    combinator::not,
+    IResult,
 };
 
 #[derive(Debug, PartialEq)]
@@ -99,7 +99,7 @@ pub fn parse_line(input: &'static str, y: u32) -> IResult<&str, (Vec<Symbol>, Ve
     let mut x = 0;
     let (mut input, width) = take_while(|c: char| c == '.')(input)?;
     x += width.len() as u32;
-    while opt(eof)(input)?.1.is_none() {
+    while !input.is_empty() {
         let token;
         (input, token) = parse_token(input)?;
         match token {
