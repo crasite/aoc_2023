@@ -20,14 +20,17 @@ pub struct Symbol {
 }
 
 impl Symbol {
-    fn get_gear_ratio(&self, numbers: &[Number]) -> usize {
+    pub fn get_gear_ratio(&self, numbers: &[Number]) -> usize {
+        if self.name != "*" {
+            return 0;
+        }
         let mut gears = vec![];
         'a: for number in numbers {
             for y in number.y.saturating_sub(1)..=number.y + 1 {
                 if self.y != y {
                     continue;
                 }
-                for x in number.x.saturating_sub(1)..=number.x + number.width + 1 {
+                for x in number.x.saturating_sub(1)..=number.x + number.width {
                     if self.x == x {
                         gears.push(number);
                         continue 'a;
@@ -35,6 +38,7 @@ impl Symbol {
                 }
             }
         }
+        dbg!(&gears);
         if gears.len() == 2 {
             gears[0].value as usize * gears[1].value as usize
         } else {
