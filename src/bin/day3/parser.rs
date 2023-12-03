@@ -21,7 +21,7 @@ pub struct Symbol {
 
 #[derive(Debug, PartialEq)]
 pub struct Number {
-    value: u32,
+    pub value: u32,
     width: u32,
     x: u32,
     y: u32,
@@ -39,7 +39,7 @@ impl Number {
                         is_part = true;
                         break 'a;
                     }
-                    if self.x <= x  && self.x + self.width >= symbol.x {
+                    if self.x <= x && self.x + self.width >= symbol.x {
                         is_part = true;
                         break 'a;
                     }
@@ -70,11 +70,10 @@ pub fn parse_line(input: &'static str, y: u32) -> IResult<&str, (Vec<Symbol>, Ve
     let mut symbols = Vec::new();
     let mut numbers = Vec::new();
     let mut x = 0;
-    let mut input = input;
+    let (mut input, width) = take_while(|c: char| c == '.')(input)?;
+    x += width.len() as u32;
     while opt(eof)(input)?.1.is_none() {
-        let (new_input, width) = take_while(|c: char| c == '.')(input)?;
-        x += width.len() as u32;
-        let (new_input, token) = parse_token(new_input)?;
+        let (new_input, token) = parse_token(input)?;
         match token {
             Token::Symbol(name) => {
                 symbols.push(Symbol { name, x, y });
@@ -91,6 +90,8 @@ pub fn parse_line(input: &'static str, y: u32) -> IResult<&str, (Vec<Symbol>, Ve
                 x += width;
             }
         }
+        let (new_input, width) = take_while(|c: char| c == '.')(new_input)?;
+        x += width.len() as u32;
         input = new_input;
     }
     Ok((input, (symbols, numbers)))
@@ -117,7 +118,7 @@ mod tests {
     #[test]
     fn could_parse_line() {
         let y = 0;
-        let input = ".617*.....33";
+        let input = ".617*.....33.";
         let expected_symbol = vec![Symbol {
             name: "*",
             x: 4,
@@ -143,7 +144,7 @@ mod tests {
     }
 
     #[test]
-    fn could_check_if_part(){
+    fn could_check_if_part() {
         let symbol = vec![Symbol {
             name: "*",
             x: 4,
