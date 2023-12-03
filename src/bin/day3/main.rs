@@ -9,7 +9,7 @@ fn part1(input: &'static str) -> u32 {
     let mut symbols = Vec::new();
     let mut numbers = Vec::new();
     let mut rs = 0;
-    for (i,line) in input.lines().enumerate() {
+    for (i, line) in input.lines().enumerate() {
         let (_, (new_symbols, new_numbers)) = parser::parse_line(line, i as u32).unwrap();
         symbols.extend(new_symbols);
         numbers.extend(new_numbers);
@@ -25,12 +25,14 @@ fn part1(input: &'static str) -> u32 {
 fn part2(input: &'static str) -> usize {
     let mut symbols = Vec::new();
     let mut numbers = Vec::new();
-    for (i,line) in input.lines().enumerate() {
+    for (i, line) in input.lines().enumerate() {
         let (_, (new_symbols, new_numbers)) = parser::parse_line(line, i as u32).unwrap();
         symbols.extend(new_symbols);
         numbers.extend(new_numbers);
     }
-    let rs = symbols.iter().fold(0, |acc, s| acc + s.get_gear_ratio(&numbers));
+    let rs = symbols
+        .iter()
+        .fold(0, |acc, s| acc + s.get_gear_ratio(&numbers));
     rs
 }
 

@@ -15,6 +15,6 @@ fn take_number(input: &str) -> IResult<&str, u32> {
 #[test]
 fn sample() {
     let input = "(123)";
-    let (input, number) = take_number(input).unwrap();
+    let (_input, number) = take_number(input).unwrap();
     assert_eq!(number, 123);
 }

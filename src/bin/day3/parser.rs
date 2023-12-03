@@ -1,9 +1,9 @@
 use nom::{
     branch::alt,
-    bytes::complete::{tag, take, take_while, take_while1},
-    character::complete::{none_of, one_of},
-    combinator::{eof, not, opt, verify},
-    IResult, Parser,
+    bytes::complete::{take, take_while, take_while1},
+    character::complete::one_of,
+    combinator::{eof, not, opt},
+    IResult
 };
 
 #[derive(Debug, PartialEq)]
@@ -38,7 +38,6 @@ impl Symbol {
                 }
             }
         }
-        dbg!(&gears);
         if gears.len() == 2 {
             gears[0].value as usize * gears[1].value as usize
         } else {
@@ -147,23 +146,19 @@ mod tests {
     fn could_parse_line() {
         let y = 0;
         let input = ".617*.....33.";
-        let expected_symbol = vec![Symbol {
-            name: "*",
-            x: 4,
-            y: y,
-        }];
+        let expected_symbol = vec![Symbol { name: "*", x: 4, y }];
         let expected_number = vec![
             Number {
                 value: 617,
                 width: 3,
                 x: 1,
-                y: y,
+                y,
             },
             Number {
                 value: 33,
                 width: 2,
                 x: 10,
-                y: y,
+                y,
             },
         ];
         let (symbols, numbers) = parse_line(input, y).unwrap().1;
