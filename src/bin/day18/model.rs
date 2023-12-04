@@ -1,4 +1,4 @@
-use std::collections::{HashMap};
+use std::collections::HashMap;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct DropPart {
@@ -17,62 +17,70 @@ impl DropPart {
     }
 
     pub fn get_empty_droplets(&self, other: &[DropPart]) -> Vec<DropPart> {
-        let mut empty_droplets = vec![];
-        empty_droplets.push(DropPart::new(self.x + 1, self.y, self.z));
-        empty_droplets.push(DropPart::new(self.x - 1, self.y, self.z));
-        empty_droplets.push(DropPart::new(self.x, self.y + 1, self.z));
-        empty_droplets.push(DropPart::new(self.x, self.y - 1, self.z));
-        empty_droplets.push(DropPart::new(self.x, self.y, self.z + 1));
-        empty_droplets.push(DropPart::new(self.x, self.y, self.z - 1));
+        let mut empty_droplets = vec![
+            DropPart::new(self.x + 1, self.y, self.z),
+            DropPart::new(self.x - 1, self.y, self.z),
+            DropPart::new(self.x, self.y + 1, self.z),
+            DropPart::new(self.x, self.y - 1, self.z),
+            DropPart::new(self.x, self.y, self.z + 1),
+            DropPart::new(self.x, self.y, self.z - 1),
+        ];
         empty_droplets.retain(|drop| !other.contains(drop));
         empty_droplets
     }
 
-    pub fn is_enclosed(&self, other: &[DropPart], max_x: i32, max_y: i32, max_z: i32, cache: Option<&mut HashMap<DropPart, bool>>) -> bool {
+    pub fn is_enclosed(
+        &self,
+        other: &[DropPart],
+        max_x: i32,
+        max_y: i32,
+        max_z: i32,
+        cache: Option<&mut HashMap<DropPart, bool>>,
+    ) -> bool {
         if let Some(cache) = &cache {
             if let Some(result) = cache.get(self) {
                 return *result;
             }
         }
         let mut enclosed_dimension = 0;
-        for x in self.x+1..=max_x {
+        for x in self.x + 1..=max_x {
             let droplet = DropPart::new(x, self.y, self.z);
-            if other.contains(&droplet){
+            if other.contains(&droplet) {
                 enclosed_dimension += 1;
                 break;
             }
         }
         for x in (0..=self.x).rev() {
             let droplet = DropPart::new(x, self.y, self.z);
-            if other.contains(&droplet){
+            if other.contains(&droplet) {
                 enclosed_dimension += 1;
                 break;
             }
         }
-        for y in self.y+1..=max_y {
+        for y in self.y + 1..=max_y {
             let droplet = DropPart::new(self.x, y, self.z);
-            if other.contains(&droplet){
+            if other.contains(&droplet) {
                 enclosed_dimension += 1;
                 break;
             }
         }
         for y in (0..=self.y).rev() {
             let droplet = DropPart::new(self.x, y, self.z);
-            if other.contains(&droplet){
+            if other.contains(&droplet) {
                 enclosed_dimension += 1;
                 break;
             }
         }
-        for z in self.z+1..=max_z {
+        for z in self.z + 1..=max_z {
             let droplet = DropPart::new(self.x, self.y, z);
-            if other.contains(&droplet){
+            if other.contains(&droplet) {
                 enclosed_dimension += 1;
                 break;
             }
         }
         for z in (0..=self.z).rev() {
             let droplet = DropPart::new(self.x, self.y, z);
-            if other.contains(&droplet){
+            if other.contains(&droplet) {
                 enclosed_dimension += 1;
                 break;
             }
@@ -80,7 +88,7 @@ impl DropPart {
         let rs = enclosed_dimension == 6;
         if let Some(cache) = cache {
             cache.insert(self.clone(), rs);
-        } 
+        }
 
         rs
     }
