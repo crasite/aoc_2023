@@ -1,8 +1,8 @@
-use std::collections::{HashMap};
+use std::collections::HashMap;
 
 mod parser;
 
-fn main(){
+fn main() {
     let input = include_str!("input.txt");
     println!("Part 1: {}", solve(input));
     println!("Part 2: {}", solve2(input));
@@ -26,12 +26,18 @@ fn solve2(input: &'static str) -> u32 {
     }
     let max = cards.len();
     for card in &cards {
-        match card_map.get(&card.id) {
-            Some(v) => card_map.insert(card.id, v + 1),
-            None => card_map.insert(card.id, 1),
+        let total = match card_map.get(&card.id) {
+            Some(&v) => {
+                card_map.insert(card.id, v + 1);
+                v + 1
+            }
+            None => {
+                card_map.insert(card.id, 1);
+                1
+            }
         };
         let next_cards = card.get_next_cards();
-        let total = *card_map.get(&card.id).unwrap();
+
         for next_card in next_cards {
             if next_card > max as u32 {
                 break;
@@ -40,7 +46,7 @@ fn solve2(input: &'static str) -> u32 {
                 Some(v) => card_map.insert(next_card, v + total),
                 None => card_map.insert(next_card, total),
             };
-        };
+        }
     }
     card_map.iter().fold(0, |acc, (_, v)| acc + v)
 }
