@@ -1,4 +1,4 @@
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashMap};
 
 mod parser;
 
@@ -31,7 +31,7 @@ fn solve2(input: &'static str) -> u32 {
             None => card_map.insert(card.id, 1),
         };
         let next_cards = card.get_next_cards();
-        let total = card_map.get(&card.id).unwrap().clone();
+        let total = *card_map.get(&card.id).unwrap();
         for next_card in next_cards {
             if next_card > max as u32 {
                 break;

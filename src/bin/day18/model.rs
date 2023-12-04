@@ -1,4 +1,4 @@
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashMap};
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct DropPart {
@@ -17,7 +17,7 @@ impl DropPart {
     }
 
     pub fn get_empty_droplets(&self, other: &[DropPart]) -> Vec<DropPart> {
-        let mut empty_droplets = Vec::new();
+        let mut empty_droplets = vec![];
         empty_droplets.push(DropPart::new(self.x + 1, self.y, self.z));
         empty_droplets.push(DropPart::new(self.x - 1, self.y, self.z));
         empty_droplets.push(DropPart::new(self.x, self.y + 1, self.z));
@@ -90,9 +90,9 @@ impl DropPart {
     }
 
     fn is_neighbor(&self, other: &DropPart) -> bool {
-        let x_diff = (self.x as i32 - other.x as i32).abs();
-        let y_diff = (self.y as i32 - other.y as i32).abs();
-        let z_diff = (self.z as i32 - other.z as i32).abs();
+        let x_diff = (self.x - other.x).abs();
+        let y_diff = (self.y - other.y).abs();
+        let z_diff = (self.z - other.z).abs();
         x_diff + y_diff + z_diff == 1
     }
 }
