@@ -1,4 +1,6 @@
-#[derive(Debug, PartialEq)]
+use std::collections::{HashSet, HashMap};
+
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct DropPart {
     x: i32,
     y: i32,
@@ -14,41 +16,73 @@ impl DropPart {
         6 - self.get_neighbor_count(other)
     }
 
-    fn get_empty_droplets(&self, other: &[DropPart]) -> Vec<DropPart> {
+    pub fn get_empty_droplets(&self, other: &[DropPart]) -> Vec<DropPart> {
         let mut empty_droplets = Vec::new();
-        for x in self.x - 1..=self.x + 1 {
-            for y in self.y - 1..=self.y + 1 {
-                for z in self.z - 1..=self.z + 1 {
-                    let droplet = DropPart::new(x, y, z);
-                    if !other.contains(&droplet) {
-                        empty_droplets.push(droplet);
-                    }
-                }
-            }
-        }
+        empty_droplets.push(DropPart::new(self.x + 1, self.y, self.z));
+        empty_droplets.push(DropPart::new(self.x - 1, self.y, self.z));
+        empty_droplets.push(DropPart::new(self.x, self.y + 1, self.z));
+        empty_droplets.push(DropPart::new(self.x, self.y - 1, self.z));
+        empty_droplets.push(DropPart::new(self.x, self.y, self.z + 1));
+        empty_droplets.push(DropPart::new(self.x, self.y, self.z - 1));
+        empty_droplets.retain(|drop| !other.contains(drop));
         empty_droplets
     }
 
-    fn is_enclosed(&self, other: &[DropPart], max_x: i32, max_y: i32, max_z: i32) -> bool {
+    pub fn is_enclosed(&self, other: &[DropPart], max_x: i32, max_y: i32, max_z: i32, cache: Option<&mut HashMap<DropPart, bool>>) -> bool {
+        if let Some(cache) = &cache {
+            if let Some(result) = cache.get(self) {
+                return *result;
+            }
+        }
+        let mut enclosed_dimension = 0;
         for x in self.x+1..=max_x {
             let droplet = DropPart::new(x, self.y, self.z);
             if other.contains(&droplet){
-                return true;
+                enclosed_dimension += 1;
+                break;
+            }
+        }
+        for x in (0..=self.x).rev() {
+            let droplet = DropPart::new(x, self.y, self.z);
+            if other.contains(&droplet){
+                enclosed_dimension += 1;
+                break;
             }
         }
         for y in self.y+1..=max_y {
             let droplet = DropPart::new(self.x, y, self.z);
             if other.contains(&droplet){
-                return true;
+                enclosed_dimension += 1;
+                break;
+            }
+        }
+        for y in (0..=self.y).rev() {
+            let droplet = DropPart::new(self.x, y, self.z);
+            if other.contains(&droplet){
+                enclosed_dimension += 1;
+                break;
             }
         }
         for z in self.z+1..=max_z {
             let droplet = DropPart::new(self.x, self.y, z);
             if other.contains(&droplet){
-                return true;
+                enclosed_dimension += 1;
+                break;
             }
         }
-        false
+        for z in (0..=self.z).rev() {
+            let droplet = DropPart::new(self.x, self.y, z);
+            if other.contains(&droplet){
+                enclosed_dimension += 1;
+                break;
+            }
+        }
+        let rs = enclosed_dimension == 6;
+        if let Some(cache) = cache {
+            cache.insert(self.clone(), rs);
+        } 
+
+        rs
     }
 
     fn get_neighbor_count(&self, other: &[DropPart]) -> i32 {
