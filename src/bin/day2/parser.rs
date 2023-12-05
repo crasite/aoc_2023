@@ -1,10 +1,10 @@
 use anyhow::{anyhow, Result};
+use aoc::space0_surrounded;
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_till},
-    character::complete::{multispace0, u32 as parse_u32},
-    combinator::{eof, not, opt},
-    multi::many1,
+    character::complete::{u32 as parse_u32},
+    multi::{separated_list1},
     IResult,
 };
 
@@ -16,7 +16,7 @@ pub fn parse_game(input: &'static str) -> Result<Game> {
 fn parse_game_line(input: &'static str) -> IResult<&str, Game> {
     let (input, _) = tag("Game ")(input)?;
     let (input, id) = parse_u32(input)?;
-    let (input, hints) = many1(parse_hints)(input)?;
+    let (input, hints) = separated_list1(tag(";"), parse_hints)(input)?;
     Ok((
         input,
         Game {
@@ -28,8 +28,7 @@ fn parse_game_line(input: &'static str) -> IResult<&str, Game> {
 
 fn parse_hint(input: &'static str) -> IResult<&str, Hint> {
     let (input, _) = take_till(|c: char| c.is_numeric())(input)?;
-    let (input, count) = parse_u32(input)?;
-    let (input, _) = multispace0(input)?;
+    let (input, count) = space0_surrounded(parse_u32)(input)?;
     let (input, color) = alt((tag("blue"), tag("green"), tag("red")))(input)?;
     Ok((
         input,
@@ -41,18 +40,7 @@ fn parse_hint(input: &'static str) -> IResult<&str, Hint> {
 }
 
 fn parse_hints(input: &'static str) -> IResult<&str, Vec<Hint>> {
-    let (input, _) = not(eof)(input)?;
-    let mut input = input;
-    let mut hints = Vec::new();
-    while !input.is_empty() {
-        let (loop_input, hint) = parse_hint(input)?;
-        hints.push(hint);
-        let (loop_input, end) = opt(tag(";"))(loop_input)?;
-        input = loop_input;
-        if end.is_some() {
-            break;
-        }
-    }
+    let (input, hints) = separated_list1(tag(","), parse_hint)(input)?;
     Ok((input, hints))
 }
 

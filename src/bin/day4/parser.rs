@@ -1,4 +1,5 @@
-use nom::IResult;
+use nom::{IResult, bytes::complete::tag, multi::separated_list1, character::complete};
+use aoc::space0_surrounded;
 
 #[derive(Debug, PartialEq)]
 pub struct Card {
@@ -30,20 +31,17 @@ impl Card {
 }
 
 pub fn parse_card(input: &'static str) -> IResult<&str, Card> {
-    let (input, _) = nom::bytes::complete::tag("Card")(input)?;
-    let (input, _) = nom::character::complete::space0(input)?;
+    let (input,_ ) = space0_surrounded(tag("Card"))(input)?;
     let (input, id) = nom::character::complete::u32(input)?;
-    let (input, _) = nom::bytes::complete::tag(":")(input)?;
-    let (input, _) = nom::character::complete::space0(input)?;
-    let (input, winning_numbers) = nom::multi::separated_list1(
-        nom::character::complete::space1,
-        nom::character::complete::u32,
+    let (input,_) = space0_surrounded(tag(":"))(input)?;
+    let (input, winning_numbers) = separated_list1(
+        complete::space1,
+        complete::u32,
     )(input)?;
-    let (input, _) = nom::bytes::complete::tag(" |")(input)?;
-    let (input, _) = nom::character::complete::space0(input)?;
-    let (input, playing_numbers) = nom::multi::separated_list1(
-        nom::character::complete::space1,
-        nom::character::complete::u32,
+    let (input, _) = space0_surrounded(tag("|"))(input)?;
+    let (input, playing_numbers) = separated_list1(
+        complete::space1,
+        complete::u32,
     )(input)?;
     Ok((
         input,
