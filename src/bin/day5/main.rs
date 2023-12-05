@@ -1,5 +1,5 @@
-
 use parser::SeedRange;
+use rayon::prelude::*;
 
 mod parser;
 
@@ -7,7 +7,7 @@ fn main() {
     let input = include_str!("./input.txt");
     println!("Part 1: {}", solve_part_1(input));
     println!("Part 2: {}", solve_part_2(input));
-    // println!("Part 2: {}", solve_part_2_brute_force(input));
+    println!("Part 2: {}", solve_part_2_brute_force(input));
 }
 
 fn solve_part_1(input: &'static str) -> i64 {
@@ -44,30 +44,27 @@ fn solve_part_2(input: &'static str) -> i64 {
     min_value
 }
 
-#[allow(dead_code)]
 fn solve_part_2_brute_force(input: &'static str) -> i64 {
     let (seeds, maps) = parser::parse_input(input).unwrap().1;
     let seed_ranges = SeedRange::new_from_vec(&seeds);
     let mut min_value = i64::MAX;
     for range in seed_ranges {
-        dbg!(&range);
-        for seed in range.from..=range.to {
-            let mut src = seed;
-            for map in &maps {
-                src = map.get_dest(src)
-            }
-            if src < min_value {
-                min_value = src;
-            }
-        }
-    }
-    for seed in seeds {
-        let mut src = seed;
-        for map in &maps {
-            src = map.get_dest(src)
-        }
-        if src < min_value {
-            min_value = src;
+        let new_low = (range.from..=range.to).into_par_iter().fold(
+            || i64::MAX,
+            |acc, seed| {
+                let mut src = seed;
+                for map in &maps {
+                    src = map.get_dest(src)
+                }
+                if src < acc {
+                    src
+                } else {
+                    acc
+                }
+            },
+        ).min().unwrap();
+        if new_low < min_value {
+            min_value = new_low;
         }
     }
     min_value
