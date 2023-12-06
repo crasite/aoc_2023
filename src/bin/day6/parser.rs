@@ -18,11 +18,15 @@ impl Race {
         for i in 1..self.time {
             let distance = i * (self.time - i);
             if distance > self.distance {
-                if first_value.is_none() {
-                    first_value = Some(i);
-                } else {
-                    last_value = Some(i);
-                }
+                first_value = Some(i);
+                break;
+            }
+        }
+        for i in (1..self.time).rev() {
+            let distance = i * (self.time - i);
+            if distance > self.distance {
+                last_value = Some(i);
+                break;
             }
         }
         (first_value.unwrap(), last_value.unwrap())
