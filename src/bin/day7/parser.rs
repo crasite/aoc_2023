@@ -7,10 +7,10 @@ use nom::{
     IResult,
 };
 
-#[derive(Debug, PartialEq)]
-struct Hand {
+#[derive(Debug, PartialEq, Eq)]
+pub struct Hand {
     cards: &'static str,
-    bet: i64,
+    pub bet: i64,
 }
 
 impl Hand {
@@ -40,6 +40,12 @@ impl Hand {
 
 impl PartialOrd for Hand {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Hand {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         match self.to_type_number().cmp(&other.to_type_number()) {
             std::cmp::Ordering::Equal => {
                 let other = other.cards.chars().collect::<Vec<_>>();
@@ -47,12 +53,12 @@ impl PartialOrd for Hand {
                     if char_to_power(c) == char_to_power(other[i]) {
                         continue;
                     } else {
-                        return Some(char_to_power(c).cmp(&char_to_power(other[i])));
+                        return char_to_power(c).cmp(&char_to_power(other[i]));
                     }
                 }
                 unreachable!();
             }
-            other => Some(other),
+            other => other,
         }
     }
 }
@@ -68,7 +74,7 @@ fn char_to_power(c: char) -> u32 {
     }
 }
 
-fn parse_hand(input: &'static str) -> IResult<&str, Hand> {
+pub fn parse_hand(input: &'static str) -> IResult<&str, Hand> {
     let (input, (cards, hand)) = separated_pair(
         take_while1(|c: char| !c.is_whitespace()),
         space1,
