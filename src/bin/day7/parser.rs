@@ -13,28 +13,93 @@ pub struct Hand {
     pub bet: i64,
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub struct Hand2(pub Hand);
+
+fn map_to_type_score(map: &HashMap<char, u32>) -> u32 {
+    if map.iter().any(|(_, v)| *v == 5) {
+        7
+    } else if map.iter().any(|(_, v)| *v == 4) {
+        6
+    } else if map.iter().any(|(_, v)| *v == 3) && map.iter().any(|(_, v)| *v == 2) {
+        5
+    } else if map.iter().any(|(_, v)| *v == 3) {
+        4
+    } else if map.iter().filter(|(_, v)| **v == 2).count() == 2 {
+        3
+    } else if map.iter().any(|(_, v)| *v == 2) {
+        2
+    } else {
+        1
+    }
+}
+
+impl Hand2 {
+    fn to_type_number(&self) -> u32 {
+        let mut map = HashMap::new();
+        for c in self.0.cards.chars() {
+            let count = map.entry(c).or_default();
+            *count += 1;
+        }
+        match map.remove(&'J') {
+            Some(v) => {
+                if v == 5 {
+                    return 7;
+                }
+                let top_key = map
+                    .iter()
+                    .fold(
+                        ('X', 0),
+                        |acc, (k, v)| {
+                            if *v > acc.1 {
+                                (*k, *v)
+                            } else {
+                                acc
+                            }
+                        },
+                    )
+                    .0;
+                assert!(top_key != 'X');
+                map.entry(top_key).and_modify(|j| *j += v);
+            }
+            _ => {}
+        }
+        map_to_type_score(&map)
+    }
+}
+
+impl PartialOrd for Hand2 {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+impl Ord for Hand2 {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        match self.to_type_number().cmp(&other.to_type_number()) {
+            std::cmp::Ordering::Equal => {
+                let other = other.0.cards.chars().collect::<Vec<_>>();
+                for (i, c) in self.0.cards.chars().enumerate() {
+                    if char_to_power_2(c) == char_to_power_2(other[i]) {
+                        continue;
+                    } else {
+                        return char_to_power_2(c).cmp(&char_to_power_2(other[i]));
+                    }
+                }
+                unreachable!();
+            }
+            other => other,
+        }
+    }
+}
+
 impl Hand {
     fn to_type_number(&self) -> u32 {
         let mut map = HashMap::new();
         for c in self.cards.chars() {
-            let count = map.entry(c).or_insert(0);
+            let count = map.entry(c).or_default();
             *count += 1;
         }
-        if map.iter().any(|(_, v)| *v == 5) {
-            7
-        } else if map.iter().any(|(_, v)| *v == 4) {
-            6
-        } else if map.iter().any(|(_, v)| *v == 3) && map.iter().any(|(_, v)| *v == 2) {
-            5
-        } else if map.iter().any(|(_, v)| *v == 3) {
-            4
-        } else if map.iter().filter(|(_, v)| **v == 2).count() == 2 {
-            3
-        } else if map.iter().any(|(_, v)| *v == 2) {
-            2
-        } else {
-            1
-        }
+        map_to_type_score(&map)
     }
 }
 
@@ -69,6 +134,17 @@ fn char_to_power(c: char) -> u32 {
         'K' => 13,
         'Q' => 12,
         'J' => 11,
+        'T' => 10,
+        _ => c.to_digit(10).unwrap(),
+    }
+}
+
+fn char_to_power_2(c: char) -> u32 {
+    match c {
+        'A' => 14,
+        'K' => 13,
+        'Q' => 12,
+        'J' => 1,
         'T' => 10,
         _ => c.to_digit(10).unwrap(),
     }
