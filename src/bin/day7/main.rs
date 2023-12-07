@@ -35,7 +35,7 @@ fn solve_part2(input: &'static str) -> i64 {
         let hand = parser::parse_hand(line).unwrap().1;
         hands.push(hand);
     }
-    let mut hands = hands.into_iter().map(|h| Hand2(h)).collect::<Vec<_>>();
+    let mut hands: Vec<Hand2> = hands.into_iter().map(|h| Hand2(h)).collect::<Vec<_>>();
     hands.sort();
     for i in 1..=hands.len() {
         total_winnings += hands[i - 1].0.bet * i as i64;

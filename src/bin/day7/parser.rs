@@ -77,12 +77,11 @@ impl Ord for Hand2 {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         match self.to_type_number().cmp(&other.to_type_number()) {
             std::cmp::Ordering::Equal => {
-                let other = other.0.cards.chars().collect::<Vec<_>>();
-                for (i, c) in self.0.cards.chars().enumerate() {
-                    if char_to_power_2(c) == char_to_power_2(other[i]) {
+                for (s, o) in self.0.cards.chars().zip(other.0.cards.chars()) {
+                    if char_to_power2(s) == char_to_power2(o) {
                         continue;
                     } else {
-                        return char_to_power_2(c).cmp(&char_to_power_2(other[i]));
+                        return char_to_power2(s).cmp(&char_to_power2(o));
                     }
                 }
                 unreachable!();
@@ -113,12 +112,11 @@ impl Ord for Hand {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         match self.to_type_number().cmp(&other.to_type_number()) {
             std::cmp::Ordering::Equal => {
-                let other = other.cards.chars().collect::<Vec<_>>();
-                for (i, c) in self.cards.chars().enumerate() {
-                    if char_to_power(c) == char_to_power(other[i]) {
+                for (s, o) in self.cards.chars().zip(other.cards.chars()) {
+                    if char_to_power(s) == char_to_power(o) {
                         continue;
                     } else {
-                        return char_to_power(c).cmp(&char_to_power(other[i]));
+                        return char_to_power(s).cmp(&char_to_power(o));
                     }
                 }
                 unreachable!();
@@ -139,7 +137,7 @@ fn char_to_power(c: char) -> u32 {
     }
 }
 
-fn char_to_power_2(c: char) -> u32 {
+fn char_to_power2(c: char) -> u32 {
     match c {
         'A' => 14,
         'K' => 13,
