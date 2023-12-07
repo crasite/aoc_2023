@@ -41,29 +41,26 @@ impl Hand2 {
             let count = map.entry(c).or_default();
             *count += 1;
         }
-        match map.remove(&'J') {
-            Some(v) => {
-                if v == 5 {
-                    return 7;
-                }
-                let top_key = map
-                    .iter()
-                    .fold(
-                        ('X', 0),
-                        |acc, (k, v)| {
-                            if *v > acc.1 {
-                                (*k, *v)
-                            } else {
-                                acc
-                            }
-                        },
-                    )
-                    .0;
-                assert!(top_key != 'X');
-                map.entry(top_key).and_modify(|j| *j += v);
+        if let Some(v) = map.remove(&'J') {
+            if v == 5 {
+                return 7;
             }
-            _ => {}
-        }
+            let top_key = map
+                .iter()
+                .fold(
+                    ('X', 0),
+                    |acc, (k, v)| {
+                        if *v > acc.1 {
+                            (*k, *v)
+                        } else {
+                            acc
+                        }
+                    },
+                )
+                .0;
+            assert!(top_key != 'X');
+            map.entry(top_key).and_modify(|j| *j += v);
+        };
         map_to_type_score(&map)
     }
 }
