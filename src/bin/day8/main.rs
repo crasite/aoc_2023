@@ -34,21 +34,12 @@ fn part1(input: &'static str) -> i64 {
         }
         total_move += 1;
     }
-    return total_move;
-}
-
-fn is_done(current_nodes: &[&str]) -> bool {
-    for node in current_nodes {
-        if node.chars().last().unwrap() != 'Z' {
-            return false;
-        }
-    }
-    true
+    total_move
 }
 
 #[derive(Debug, Clone, Copy)]
 struct Record {
-    current: i64,
+    _current: i64,
     loop_size: i64,
 }
 
@@ -78,9 +69,9 @@ fn get_node_loop(
     let loop_size = passed_node.len() - index;
     let mut records = vec![];
     for i in 0..passed_node.len() {
-        if passed_node[i].0.chars().last().unwrap() == 'Z' {
+        if passed_node[i].0.ends_with('Z') {
             records.push(Record {
-                current: i as i64,
+                _current: i as i64,
                 loop_size: loop_size as i64,
             });
         }
@@ -95,8 +86,8 @@ fn move_node<'a>(
 ) -> &'a str {
     let (left, right) = map.get(current_node).unwrap();
     match instruction.next() {
-        'L' => *left,
-        'R' => *right,
+        'L' => left,
+        'R' => right,
         _ => unreachable!(),
     }
 }
@@ -109,19 +100,14 @@ fn part2(input: &'static str) -> i64 {
     }
     let mut current_nodes = vec![];
     for node in map.keys() {
-        if node.chars().last().unwrap() == 'A' {
+        if node.ends_with('A') {
             current_nodes.push(*node);
         }
     }
     let mut records = vec![];
     for node in current_nodes.iter() {
         let mut instruction = instruction.clone();
-        records.push(
-            get_node_loop(node, &mut instruction, &map)
-                .last()
-                .unwrap()
-                .clone(),
-        );
+        records.push(*get_node_loop(node, &mut instruction, &map).last().unwrap());
     }
     records.iter().fold(1, |acc, x| lcm(acc, x.loop_size))
 }
