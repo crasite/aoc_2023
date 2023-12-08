@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use parser::Instruction;
 use rayon::prelude::*;
 
 mod parser;
@@ -39,6 +40,61 @@ fn is_done(current_nodes: &[&str]) -> bool {
     true
 }
 
+#[derive(Debug)]
+struct Record {
+    current: i64,
+    loop_size: i64,
+}
+
+fn get_node_loop(
+    current_nodes: &str,
+    instruction: &mut Instruction,
+    map: &HashMap<&str, (&str, &str)>,
+) {
+    let base_node = current_nodes;
+    let mut passed_node = vec![];
+
+    passed_node.push((base_node, instruction.index));
+    let mut current_node = move_node(map, base_node, instruction);
+    while !passed_node.contains(&(current_node, instruction.index)) {
+        passed_node.push((current_node, instruction.index));
+        let (left, right) = map.get(current_node).unwrap();
+        match instruction.next() {
+            'L' => current_node = left,
+            'R' => current_node = right,
+            _ => unreachable!(),
+        }
+    }
+    let index = passed_node
+        .iter()
+        .position(|&x| x == (current_node, instruction.index))
+        .unwrap();
+    let loop_size = passed_node.len() - index;
+    let mut records = vec![];
+    for i in 0..passed_node.len() {
+        if passed_node[i].0.chars().last().unwrap() == 'Z' {
+            records.push(Record {
+                current: i as i64,
+                loop_size: loop_size as i64,
+            });
+        }
+    }
+    println!("{:?}", records);
+}
+
+fn move_node<'a>(
+    map: &HashMap<&str, (&'a str, &'a str)>,
+    current_node: &str,
+    instruction: &mut Instruction,
+) -> &'a str {
+    let (left, right) = map.get(current_node).unwrap();
+    match instruction.next() {
+        'L' => *left,
+        'R' => *right,
+        _ => unreachable!(),
+    }
+}
+
 fn part2(input: &'static str) -> i64 {
     let (mut instruction, nodes) = parser::parse(input).unwrap().1;
     let mut map = HashMap::new();
@@ -50,6 +106,10 @@ fn part2(input: &'static str) -> i64 {
         if node.chars().last().unwrap() == 'A' {
             current_nodes.push(*node);
         }
+    }
+    for node in current_nodes.iter() {
+        let mut instruction = instruction.clone();
+        get_node_loop(node, &mut instruction, &map);
     }
     let mut total_move = 0;
 
@@ -64,7 +124,7 @@ fn part2(input: &'static str) -> i64 {
             }
         });
         total_move += 1;
-        if (total_move % 10000) == 0 {
+        if (total_move % 100000) == 0 {
             println!("{}: {:?}", total_move, current_nodes);
         }
     }

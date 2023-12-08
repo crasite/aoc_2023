@@ -4,10 +4,10 @@ use nom::{
     IResult,
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Instruction {
     directions: Vec<char>,
-    index: usize,
+    pub index: usize,
 }
 impl Instruction {
     pub fn next(&mut self) -> char {
