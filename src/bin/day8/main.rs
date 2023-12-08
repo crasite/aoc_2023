@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use num::integer::lcm;
+
 use parser::Instruction;
 use rayon::prelude::*;
 
@@ -40,7 +42,7 @@ fn is_done(current_nodes: &[&str]) -> bool {
     true
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 struct Record {
     current: i64,
     loop_size: i64,
@@ -50,7 +52,7 @@ fn get_node_loop(
     current_nodes: &str,
     instruction: &mut Instruction,
     map: &HashMap<&str, (&str, &str)>,
-) {
+) -> Vec<Record> {
     let base_node = current_nodes;
     let mut passed_node = vec![];
 
@@ -79,7 +81,7 @@ fn get_node_loop(
             });
         }
     }
-    println!("{:?}", records);
+    records
 }
 
 fn move_node<'a>(
@@ -96,7 +98,7 @@ fn move_node<'a>(
 }
 
 fn part2(input: &'static str) -> i64 {
-    let (mut instruction, nodes) = parser::parse(input).unwrap().1;
+    let (instruction, nodes) = parser::parse(input).unwrap().1;
     let mut map = HashMap::new();
     for node in nodes {
         map.insert(node.name, (node.left, node.right));
@@ -107,28 +109,17 @@ fn part2(input: &'static str) -> i64 {
             current_nodes.push(*node);
         }
     }
+    let mut records = vec![];
     for node in current_nodes.iter() {
         let mut instruction = instruction.clone();
-        get_node_loop(node, &mut instruction, &map);
+        records.push(
+            get_node_loop(node, &mut instruction, &map)
+                .last()
+                .unwrap()
+                .clone(),
+        );
     }
-    let mut total_move = 0;
-
-    while !is_done(&current_nodes) {
-        let direction = instruction.next();
-        current_nodes.par_iter_mut().for_each(|node| {
-            let (left, right) = map.get(*node).unwrap();
-            match direction {
-                'L' => *node = *left,
-                'R' => *node = *right,
-                _ => unreachable!(),
-            }
-        });
-        total_move += 1;
-        if (total_move % 100000) == 0 {
-            println!("{}: {:?}", total_move, current_nodes);
-        }
-    }
-    total_move
+    records.iter().fold(1, |acc, x| lcm(acc, x.loop_size))
 }
 
 #[cfg(test)]
