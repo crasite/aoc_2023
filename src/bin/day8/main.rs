@@ -11,6 +11,10 @@ fn main() {
     let input = include_str!("input.txt");
     println!("Part 1: {}", part1(input));
     println!("Part 2: {}", part2(input));
+    // PART 2 ONLY WORKS BECAUSE ALL THE NODES TRAVERSAL GOES THROUGH THE WHOLE LOOP AFTER THE
+    // INSTRUCTION AND IT EXIST ONLY ONE END NODE
+    // EXTRA INSTRUCTION IS NEEDED IF GET_NODE_LOOP RETURN MORE THAN ONE RECORD WITH CURRENT &
+    // LOOP_SIZE BEING DIFFERENT
 }
 
 fn part1(input: &'static str) -> i64 {
